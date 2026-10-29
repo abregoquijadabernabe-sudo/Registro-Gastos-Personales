@@ -1,0 +1,211 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes mensuales | Mis Finanzas</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-icon">$</div>
+            <div>
+                <h2>Mis Finanzas</h2>
+                <p>Control personal</p>
+            </div>
+        </div>
+
+        <p class="menu-title">MENÚ PRINCIPAL</p>
+
+        <nav>
+            <a class="nav-link" href="{{ url_for('inicio') }}">▦ &nbsp; Panel principal</a>
+            <a class="nav-link" href="{{ url_for('inicio') }}#movimientos">↔ &nbsp; Movimientos</a>
+            <a class="nav-link" href="{{ url_for('inicio') }}#registro">＋ &nbsp; Registrar movimiento</a>
+            <a class="nav-link active" href="{{ url_for('reportes') }}">▥ &nbsp; Reportes</a>
+        </nav>
+
+        <p class="sidebar-footer">Registro de Gastos Personales</p>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">ANÁLISIS FINANCIERO</p>
+                <h1>Reportes mensuales</h1>
+                <p class="subtitle">
+                    Consulta tus ingresos, gastos y saldo por mes.
+                </p>
+            </div>
+            <a class="button button-outline"
+               href="{{ url_for('inicio') }}">← Volver al panel</a>
+        </header>
+
+        <section class="panel">
+            <form method="GET" action="{{ url_for('reportes') }}"
+                  class="month-filter">
+                <div class="form-field">
+                    <label for="mes">Seleccionar mes</label>
+                    <input type="month" id="mes" name="mes"
+                           value="{{ mes }}" required>
+                </div>
+                <button type="submit" class="button button-primary">
+                    Consultar reporte
+                </button>
+            </form>
+            
+<a class="button button-outline"
+   href="{{ url_for('exportar_reporte', mes=mes) }}">
+    Descargar reporte CSV
+</a>
+
+        </section>
+
+        <section class="summary-grid">
+            <article class="summary-card balance-card">
+                <div class="card-icon">$</div>
+                <p>Saldo del mes</p>
+                <h2>${{ "%.2f"|format(saldo) }}</h2>
+                <small>Ingresos menos gastos</small>
+            </article>
+
+            <article class="summary-card">
+                <div class="card-icon income-icon">↗</div>
+                <p>Ingresos del mes</p>
+                <h2>${{ "%.2f"|format(ingresos) }}</h2>
+                <small>Total registrado en el mes</small>
+            </article>
+
+            <article class="summary-card">
+                <div class="card-icon expense-icon">↘</div>
+                <p>Gastos del mes</p>
+                <h2>${{ "%.2f"|format(gastos) }}</h2>
+                <small>Total registrado en el mes</small>
+            </article>
+
+            <article class="summary-card">
+                <div class="card-icon category-icon">▤</div>
+                <p>Movimientos</p>
+                <h2>{{ cantidad }}</h2>
+                <small>Registros del mes</small>
+            </article>
+        </section>
+
+        
+<section class="panel">
+    <div class="section-heading">
+        <div>
+            <h2>Comparación de ingresos y gastos</h2>
+            <p>Comparación de los importes del mes seleccionado.</p>
+        </div>
+    </div>
+
+    <div class="comparison-chart">
+        <div class="comparison-item">
+            <div class="comparison-label">
+                <span>Ingresos</span>
+                <strong>${{ "%.2f"|format(ingresos) }}</strong>
+            </div>
+            <progress
+                class="comparison-progress income-progress"
+                value="{{ ingresos }}"
+                max="{{ escala }}">
+            </progress>
+        </div>
+
+        <div class="comparison-item">
+            <div class="comparison-label">
+                <span>Gastos</span>
+                <strong>${{ "%.2f"|format(gastos) }}</strong>
+            </div>
+            <progress
+                class="comparison-progress expense-progress"
+                value="{{ gastos }}"
+                max="{{ escala }}">
+            </progress>
+        </div>
+    </div>
+</section>
+
+
+        <section class="panel">
+            <div class="section-heading">
+                <div>
+                    <h2>Gastos por categoría</h2>
+                    <p>Distribución de los gastos del mes seleccionado.</p>
+                </div>
+            </div>
+
+            {% if categorias %}
+                {% for categoria, total, numero in categorias %}
+                    <div class="category-row">
+                        <div class="category-label">
+                            <span>{{ categoria }}</span>
+                            <strong>${{ "%.2f"|format(total) }}</strong>
+                        
+<progress
+    class="category-progress"
+    value="{{ total }}"
+    max="{{ gastos if gastos > 0 else 1 }}">
+</progress>
+
+                        <small>{{ numero }} movimiento(s)</small>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="empty-report">
+                    No hay gastos registrados en este mes.
+                </p>
+            {% endif %}
+        </section>
+
+        <section class="panel">
+            <div class="section-heading">
+                <div>
+                    <h2>Detalle de movimientos</h2>
+                    <p>Todos los movimientos correspondientes al mes.</p>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Descripción</th>
+                            <th>Categoría</th>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Importe</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for movimiento in movimientos %}
+                        <tr>
+                            <td>{{ movimiento[0] }}</td>
+                            <td>{{ movimiento[1] }}</td>
+                            <td>{{ movimiento[2] }}</td>
+                            <td>
+                                {% if movimiento[3] == 'Ingreso' %}
+                                    <span class="tag tag-income">Ingreso</span>
+                                {% else %}
+                                    <span class="tag tag-expense">Gasto</span>
+                                {% endif %}
+                            </td>
+                            <td class="amount">
+                                {% if movimiento[3] == 'Ingreso' %}+{% else %}−{% endif %}${{ "%.2f"|format(movimiento[4]) }}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5">No hay movimientos en este mes.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

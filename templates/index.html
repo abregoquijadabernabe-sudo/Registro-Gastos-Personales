@@ -1,0 +1,235 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Finanzas | Registro de Gastos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-icon">$</div>
+            <div>
+                <h2>Mis Finanzas</h2>
+                <p>Control personal</p>
+            </div>
+        </div>
+
+        <p class="menu-title">MENÚ PRINCIPAL</p>
+
+        <nav>
+            <a class="nav-link active" href="#inicio">▦ &nbsp; Panel principal</a>
+            <a class="nav-link" href="#movimientos">↔ &nbsp; Movimientos</a>
+            <a class="nav-link" href="#registro">＋ &nbsp; Registrar movimiento</a>
+            <a class="nav-link" href="{{ url_for('reportes') }}">▥ &nbsp; Reportes</a>
+        </nav>
+
+        <p class="sidebar-footer">Registro de Gastos Personales</p>
+    </aside>
+
+    <main class="main-content" id="inicio">
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">CONTROL FINANCIERO PERSONAL</p>
+                <h1>Panel principal</h1>
+                <p class="subtitle">Organiza tu dinero y conoce el estado de tus finanzas.</p>
+            </div>
+            <span class="connection">
+                <span class="status-dot"></span> Interfaz de prueba
+            </span>
+        </header>
+
+        <section class="summary-grid">
+            <article class="summary-card balance-card">
+                <div class="card-icon">$</div>
+                <p>Saldo disponible</p>
+                <h2>${{ "%.2f"|format(saldo) }}</h2>
+                <small>Ingresos menos gastos</small>
+            </article>
+
+            <article class="summary-card">
+                <div class="card-icon income-icon">↗</div>
+                <p>Total de ingresos</p>
+                <h2>${{ "%.2f"|format(ingresos) }}</h2>
+                <small>Ingresos registrados</small>
+            </article>
+
+            <article class="summary-card">
+                <div class="card-icon expense-icon">↘</div>
+                <p>Total de gastos</p>
+                <h2>${{ "%.2f"|format(gastos) }}</h2>
+                <small>Gastos registrados</small>
+            </article>
+
+            <article class="summary-card">
+                <div class="card-icon category-icon">▤</div>
+                <p>Movimientos</p>
+                <h2>{{ cantidad }}</h2>
+                <small>Registros de ejemplo</small>
+            </article>
+        </section>
+
+        <section class="panel" id="movimientos">
+            <div class="section-heading">
+                <div>
+                    <h2>Movimientos recientes</h2>
+                    <p>Consulta tus últimos ingresos y gastos.</p>
+                </div>
+                <a class="button button-outline" href="#registro">+ Nuevo movimiento</a>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Descripción</th>
+                            <th>Categoría</th>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Importe</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    
+<tbody>
+    {% for movimiento in movimientos %}
+    <tr>
+        <td>{{ movimiento[1] }}</td>
+        <td>{{ movimiento[2] }}</td>
+        <td>{{ movimiento[3] }}</td>
+        <td>
+            {% if movimiento[4] == 'Ingreso' %}
+                <span class="tag tag-income">Ingreso</span>
+            {% else %}
+                <span class="tag tag-expense">Gasto</span>
+            {% endif %}
+        </td>
+        <td class="amount {% if movimiento[4] == 'Ingreso' %}income-text{% else %}expense-text{% endif %}">
+            {% if movimiento[4] == 'Ingreso' %}+{% else %}−{% endif %}${{ "%.2f"|format(movimiento[5]) }}
+        </td>
+        
+<td class="row-actions">
+    <a class="button button-outline"
+       href="{{ url_for('editar', id=movimiento[0]) }}">
+        Editar
+    </a>
+
+    <form method="POST"
+          action="{{ url_for('eliminar', id=movimiento[0]) }}"
+          onsubmit="return confirm('¿Seguro que deseas eliminar este movimiento?');">
+        <button type="submit" class="button button-delete">
+            Eliminar
+        </button>
+    </form>
+</td>
+
+    </tr>
+    {% else %}
+    <tr>
+        <td colspan="6">Todavía no hay movimientos registrados.</td>
+    </tr>
+    {% endfor %}
+</tbody>
+
+                </table>
+            </div>
+            <p class="demo-note">Estos registros son ilustrativos. Todavía no se guardan en una base de datos.</p>
+        </section>
+
+        <section class="panel register-panel" id="registro">
+            <div class="section-heading">
+                <div>
+                    <h2>Registrar movimiento</h2>
+                    <p>Esta sección se habilitará en la siguiente etapa.</p>
+                </div>
+            </div>
+            
+{% with mensajes = get_flashed_messages(with_categories=true) %}
+    {% for categoria_mensaje, mensaje in mensajes %}
+        <div class="notice {{ categoria_mensaje }}">
+            {{ mensaje }}
+        </div>
+    {% endfor %}
+{% endwith %}
+
+<form method="POST" action="{{ url_for('inicio') }}" class="movement-form">
+    <div class="form-grid">
+        <div class="form-field">
+            <label for="descripcion">Descripción</label>
+            <input
+                type="text"
+                id="descripcion"
+                name="descripcion"
+                maxlength="120"
+                placeholder="Ej. Compra en supermercado"
+                required
+            >
+        </div>
+
+        <div class="form-field">
+            <label for="tipo">Tipo de movimiento</label>
+            <select id="tipo" name="tipo" required>
+                <option value="">Selecciona una opción</option>
+                <option value="Ingreso">Ingreso</option>
+                <option value="Gasto">Gasto</option>
+            </select>
+        </div>
+
+        <div class="form-field">
+            <label for="categoria">Categoría</label>
+            <select id="categoria" name="categoria" required>
+                <option value="">Selecciona una categoría</option>
+                <option value="Salario">Salario</option>
+                <option value="Ventas">Ventas</option>
+                <option value="Otros ingresos">Otros ingresos</option>
+                <option value="Alimentación">Alimentación</option>
+                <option value="Transporte">Transporte</option>
+                <option value="Vivienda">Vivienda</option>
+                <option value="Servicios">Servicios</option>
+                <option value="Salud">Salud</option>
+                <option value="Educación">Educación</option>
+                <option value="Entretenimiento">Entretenimiento</option>
+                <option value="Otros gastos">Otros gastos</option>
+            </select>
+        </div>
+
+        <div class="form-field">
+            <label for="fecha">Fecha</label>
+            <input
+                type="date"
+                id="fecha"
+                name="fecha"
+                value="{{ fecha_hoy }}"
+                required
+            >
+        </div>
+
+        <div class="form-field">
+            <label for="importe">Importe ($)</label>
+            <input
+                type="number"
+                id="importe"
+                name="importe"
+                min="0.01"
+                step="0.01"
+                placeholder="0.00"
+                required
+            >
+        </div>
+    </div>
+
+    <button type="submit" class="button button-primary">
+        Guardar movimiento
+    </button>
+</form>
+
+        </section>
+
+        <footer>
+            Registro de Gastos Personales · Proyecto académico
+        </footer>
+    </main>
+</body>
+</html>
